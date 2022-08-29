@@ -11,7 +11,7 @@ abstract class Downloader {
     Directory? cacheDir,
   }) async {
     try {
-      final localFilePath = LocalFile.getPath(
+      final localFilePath = await LocalFile.getPath(
         storagePath: storagePath,
         cacheDir: cacheDir,
       );
