@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:storage_manager/core/local_file.dart';
 import '../storage_manager.dart';
@@ -5,14 +7,17 @@ import '../storage_manager.dart';
 /// Using this widget it will download the file if not downloaded yet,
 /// if downloaded it will get it back in snapshot.
 class DownloadMediaBuilder extends StatefulWidget {
-  const DownloadMediaBuilder({
-    Key? key,
-    required this.storagePath,
-    required this.builder,
-  }) : super(key: key);
+  const DownloadMediaBuilder(
+      {Key? key,
+      required this.storagePath,
+      required this.builder,
+      this.cacheDirectory})
+      : super(key: key);
 
   /// URL of any type of media (Audio, Video, Image, etc...)
   final String storagePath;
+
+  final Directory? cacheDirectory;
 
   /// Snapshot Will provide you the status of process
   /// (Success, Error, Loading)
@@ -48,7 +53,8 @@ class _DownloadMediaBuilderState extends State<DownloadMediaBuilder> {
       },
     );
 
-    __downloadMediaBuilderController.getFile(widget.storagePath);
+    __downloadMediaBuilderController.getFile(widget.storagePath,
+        cacheDir: widget.cacheDirectory);
 
     super.initState();
   }
@@ -82,9 +88,10 @@ class _DownloadMediaBuilderController {
 
   /// Try to get file path from cache,
   /// If it's not exists it will download the file and cache it.
-  Future<void> getFile(String storagePath) async {
+  Future<void> getFile(String storagePath, {Directory? cacheDir}) async {
     try {
-      String filePath = await LocalFile.getPath(storagePath: storagePath);
+      String filePath =
+          await LocalFile.getPath(storagePath: storagePath, cacheDir: cacheDir);
       bool fileExists = await LocalFile.fileExists(filePath);
       if (fileExists) {
         _snapshot.filePath = filePath;
