@@ -106,7 +106,7 @@ class _DownloadMediaBuilderController {
 
       /// Caching FilePath
       await DownloadCacheManager.cacheFilePath(
-          url: storagePath, path: filePath);
+          storagePath: storagePath, filePath: filePath);
     } else {
       _onSnapshotChanged(_snapshot..status = DownloadMediaStatus.error);
     }

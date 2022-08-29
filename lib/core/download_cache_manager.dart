@@ -24,16 +24,16 @@ abstract class DownloadCacheManager {
   /// Caching File Path
   /// [Caching in HashMap Key is : URL, Value is : Path]
   static Future<void> cacheFilePath({
-    required String url,
-    required String path,
+    required String storagePath,
+    required String filePath,
   }) async {
-    await _getStorage.write(url, path);
+    await _getStorage.write(storagePath, filePath);
   }
 
   /// Getting File path based on given storage path
   /// [It's Big O is a Constant Time]
   static String? getCachedFilePath(String storagePath) {
-    return _getStorage.read(getFileNameFromStoragePath(storagePath));
+    return _getStorage.read(storagePath);
   }
 
   /// Setting ExpireDate if expire date came
