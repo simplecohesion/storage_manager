@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storage_manager/core/local_file.dart';
 import '../storage_manager.dart';
 
 /// Using this widget it will download the file if not downloaded yet,
@@ -47,11 +48,7 @@ class _DownloadMediaBuilderState extends State<DownloadMediaBuilder> {
       },
     );
 
-    /// Initializing Caching Database
-    DownloadCacheManager.init().then((value) {
-      /// Starting Caching Database
-      __downloadMediaBuilderController.getFile(widget.storagePath);
-    });
+    __downloadMediaBuilderController.getFile(widget.storagePath);
 
     super.initState();
   }
@@ -86,28 +83,27 @@ class _DownloadMediaBuilderController {
   /// Try to get file path from cache,
   /// If it's not exists it will download the file and cache it.
   Future<void> getFile(String storagePath) async {
-    String? filePath = DownloadCacheManager.getCachedFilePath(storagePath);
-    if (filePath != null) {
-      _snapshot.filePath = filePath;
-      _snapshot.status = DownloadMediaStatus.success;
-      _onSnapshotChanged(_snapshot);
-      return;
-    }
-    filePath = await Downloader.downloadFile(
-      storagePath,
-      onProgress: (progress, total) {
-        _onSnapshotChanged(_snapshot..progress = (progress / total));
-      },
-    );
-    if (filePath != null) {
-      _snapshot.filePath = filePath;
-      _snapshot.status = DownloadMediaStatus.success;
-      _onSnapshotChanged(_snapshot);
+    try {
+      String filePath = await LocalFile.getPath(storagePath: storagePath);
+      bool fileExists = await LocalFile.fileExists(filePath);
+      if (fileExists) {
+        _snapshot.filePath = filePath;
+        _snapshot.status = DownloadMediaStatus.success;
+        _onSnapshotChanged(_snapshot);
+        return;
+      }
 
-      /// Caching FilePath
-      await DownloadCacheManager.cacheFilePath(
-          storagePath: storagePath, filePath: filePath);
-    } else {
+      await Downloader.downloadFile(
+        storagePath,
+        onProgress: (progress, total) {
+          _onSnapshotChanged(_snapshot..progress = (progress / total));
+        },
+      );
+
+      _snapshot.filePath = filePath;
+      _snapshot.status = DownloadMediaStatus.success;
+      _onSnapshotChanged(_snapshot);
+    } catch (error) {
       _onSnapshotChanged(_snapshot..status = DownloadMediaStatus.error);
     }
   }
