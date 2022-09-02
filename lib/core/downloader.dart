@@ -18,7 +18,7 @@ abstract class Downloader {
       final url =
           await FirebaseStorage.instance.ref(storagePath).getDownloadURL();
 
-      final dl = DownloadManager();
+      final dl = DownloadManager(maxConcurrentTasks: 4);
 
       return await dl.addDownload(url, localFilePath);
     } catch (e, s) {
