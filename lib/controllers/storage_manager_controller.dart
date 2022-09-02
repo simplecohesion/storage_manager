@@ -26,7 +26,6 @@ class StorageManagerController {
   late final StorageManagerSnapshot _snapshot;
 
   DownloadTask? _task;
-  String? _filepath;
   bool _isDisposed = false;
 
   /// Try to get file path from cache,
@@ -44,32 +43,58 @@ class StorageManagerController {
         return;
       }
 
-      _filepath = filePath;
       _task = await Downloader.downloadFile(
         storagePath,
       );
 
       _task?.progress.addListener(progressUpdated);
+      _task?.status.addListener(statusUpdated);
     } catch (error) {
       _onSnapshotChanged(_snapshot..status = StorageManagerStatus.error);
     }
   }
 
   void progressUpdated() {
-    if (_isDisposed || _filepath == null) return;
+    if (_isDisposed) return;
 
-    final progress = _task?.progress.value ?? 1;
-    if (progress == 1) {
-      _snapshot.filePath = _filepath!;
+    final task = _task;
+    if (task == null) return;
+
+    final progress = task.progress.value;
+
+    _onSnapshotChanged(_snapshot..progress = (progress));
+  }
+
+  void statusUpdated() {
+    if (_isDisposed) return;
+
+    final task = _task;
+    if (task == null) return;
+    final filePath = task.request.path;
+
+    final status = task.status;
+
+    if (status.value == DownloadStatus.completed) {
+      _snapshot.filePath = filePath;
       _snapshot.status = StorageManagerStatus.success;
       _onSnapshotChanged(_snapshot);
-      return;
     }
-    _onSnapshotChanged(_snapshot..progress = (progress));
+
+    if (status.value == DownloadStatus.downloading) {
+      _snapshot.status = StorageManagerStatus.loading;
+      _onSnapshotChanged(_snapshot);
+    }
+
+    if (status.value == DownloadStatus.failed) {
+      task.request.cancelToken.cancel();
+      _snapshot.status = StorageManagerStatus.error;
+      _onSnapshotChanged(_snapshot);
+    }
   }
 
   void dispose() {
     _isDisposed = true;
     _task?.progress.removeListener(progressUpdated);
+    _task?.status.removeListener(statusUpdated);
   }
 }
