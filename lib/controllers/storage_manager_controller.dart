@@ -71,6 +71,5 @@ class StorageManagerController {
   void dispose() {
     _isDisposed = true;
     _task?.progress.removeListener(progressUpdated);
-    _onSnapshotChanged = (snapshot) {};
   }
 }
