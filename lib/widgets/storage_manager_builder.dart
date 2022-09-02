@@ -29,7 +29,7 @@ class StorageManagerBuilder extends StatefulWidget {
 }
 
 class _StorageManagerBuilderState extends State<StorageManagerBuilder> {
-  late StorageManagerController _downloadMediaBuilderController;
+  late StorageManagerController _storageManagerController;
   late StorageManagerSnapshot snapshot;
 
   @override
@@ -41,7 +41,7 @@ class _StorageManagerBuilderState extends State<StorageManagerBuilder> {
     );
 
     /// Initializing Widget Logic Controller
-    _downloadMediaBuilderController = StorageManagerController(
+    _storageManagerController = StorageManagerController(
       snapshot: snapshot,
       onSnapshotChanged: (snapshot) {
         if (mounted) {
@@ -52,10 +52,16 @@ class _StorageManagerBuilderState extends State<StorageManagerBuilder> {
       },
     );
 
-    _downloadMediaBuilderController.getFile(widget.storagePath,
+    _storageManagerController.getFile(widget.storagePath,
         cacheDir: widget.cacheDirectory);
 
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _storageManagerController.dispose();
+    super.dispose();
   }
 
   @override
