@@ -1,13 +1,13 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'local_file.dart';
+import 'package:flutter_download_manager/flutter_download_manager.dart';
 
 abstract class Downloader {
   static Future<void> downloadFile(
     String storagePath, {
-    required Function(int progress, int total) onProgress,
+    required Function(double progress) onProgress,
     Directory? cacheDir,
   }) async {
     try {
@@ -19,11 +19,12 @@ abstract class Downloader {
       final url =
           await FirebaseStorage.instance.ref(storagePath).getDownloadURL();
 
-      await Dio().download(
-        url,
-        localFilePath,
-        onReceiveProgress: onProgress,
-      );
+      final dl = DownloadManager();
+      final task = await dl.addDownload(url, localFilePath);
+
+      task?.progress.addListener(() {
+        onProgress(task.progress.value);
+      });
     } catch (e, s) {
       if (kDebugMode) {
         print(e);

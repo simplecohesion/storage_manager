@@ -5,8 +5,8 @@ import '../storage_manager.dart';
 
 /// Using this widget it will download the file if not downloaded yet,
 /// if downloaded it will get it back in snapshot.
-class DownloadMediaBuilder extends StatefulWidget {
-  const DownloadMediaBuilder(
+class StorageManagerBuilder extends StatefulWidget {
+  const StorageManagerBuilder(
       {Key? key,
       required this.storagePath,
       required this.builder,
@@ -21,27 +21,27 @@ class DownloadMediaBuilder extends StatefulWidget {
   /// Snapshot Will provide you the status of process
   /// (Success, Error, Loading)
   /// and file if downloaded and download progress
-  final Widget? Function(BuildContext context, DownloadMediaSnapshot snapshot)
+  final Widget? Function(BuildContext context, StorageManagerSnapshot snapshot)
       builder;
 
   @override
-  State<DownloadMediaBuilder> createState() => _DownloadMediaBuilderState();
+  State<StorageManagerBuilder> createState() => _StorageManagerBuilderState();
 }
 
-class _DownloadMediaBuilderState extends State<DownloadMediaBuilder> {
-  late DownloadMediaBuilderController __downloadMediaBuilderController;
-  late DownloadMediaSnapshot snapshot;
+class _StorageManagerBuilderState extends State<StorageManagerBuilder> {
+  late StorageManagerController _downloadMediaBuilderController;
+  late StorageManagerSnapshot snapshot;
 
   @override
   void initState() {
-    snapshot = DownloadMediaSnapshot(
-      status: DownloadMediaStatus.loading,
+    snapshot = StorageManagerSnapshot(
+      status: StorageManagerStatus.loading,
       filePath: null,
       progress: null,
     );
 
     /// Initializing Widget Logic Controller
-    __downloadMediaBuilderController = DownloadMediaBuilderController(
+    _downloadMediaBuilderController = StorageManagerController(
       snapshot: snapshot,
       onSnapshotChanged: (snapshot) {
         if (mounted) {
@@ -52,7 +52,7 @@ class _DownloadMediaBuilderState extends State<DownloadMediaBuilder> {
       },
     );
 
-    __downloadMediaBuilderController.getFile(widget.storagePath,
+    _downloadMediaBuilderController.getFile(widget.storagePath,
         cacheDir: widget.cacheDirectory);
 
     super.initState();
