@@ -1,8 +1,9 @@
 import 'dart:io';
 
+import 'package:firebase_storage/firebase_storage.dart' show FirebaseException;
 import 'package:flutter_download_manager/flutter_download_manager.dart';
 
-import '../core/downloader.dart';
+import '../core/download_manager.dart';
 import '../core/local_file.dart';
 import '../enums/storage_manager_status.dart';
 import '../models/storage_manager_snapshot.dart';
@@ -25,7 +26,7 @@ class StorageManagerController {
   /// 3 - FilePath : When Status is Success the FilePath won't be null;
   late final StorageManagerSnapshot _snapshot;
 
-  DownloadTask? _task;
+  DownloadTask? _downloadTask;
   bool _isDisposed = false;
 
   /// Try to get file path from cache,
@@ -43,12 +44,18 @@ class StorageManagerController {
         return;
       }
 
-      _task = await Downloader.downloadFile(
+      _downloadTask = await Downloader.downloadFile(
         storagePath,
       );
 
-      _task?.progress.addListener(progressUpdated);
-      _task?.status.addListener(statusUpdated);
+      _downloadTask?.progress.addListener(progressUpdated);
+      _downloadTask?.status.addListener(statusUpdated);
+    } on FirebaseException catch (e) {
+      if (e.code == 'object-not-found') {
+        _onSnapshotChanged(_snapshot..status = StorageManagerStatus.missing);
+      } else {
+        _onSnapshotChanged(_snapshot..status = StorageManagerStatus.error);
+      }
     } catch (error) {
       _onSnapshotChanged(_snapshot..status = StorageManagerStatus.error);
     }
@@ -57,7 +64,7 @@ class StorageManagerController {
   void progressUpdated() {
     if (_isDisposed) return;
 
-    final task = _task;
+    final task = _downloadTask;
     if (task == null) return;
 
     final progress = task.progress.value;
@@ -68,7 +75,7 @@ class StorageManagerController {
   void statusUpdated() {
     if (_isDisposed) return;
 
-    final task = _task;
+    final task = _downloadTask;
     if (task == null) return;
     final filePath = task.request.path;
 
@@ -94,7 +101,7 @@ class StorageManagerController {
 
   void dispose() {
     _isDisposed = true;
-    _task?.progress.removeListener(progressUpdated);
-    _task?.status.removeListener(statusUpdated);
+    _downloadTask?.progress.removeListener(progressUpdated);
+    _downloadTask?.status.removeListener(statusUpdated);
   }
 }

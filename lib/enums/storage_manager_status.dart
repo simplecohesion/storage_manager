@@ -1,1 +1,1 @@
-enum StorageManagerStatus { success, loading, error }
+enum StorageManagerStatus { success, loading, error, missing }

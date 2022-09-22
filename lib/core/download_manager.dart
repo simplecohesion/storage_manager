@@ -1,0 +1,23 @@
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart' show FirebaseStorage;
+import 'local_file.dart';
+import 'package:flutter_download_manager/flutter_download_manager.dart';
+
+abstract class Downloader {
+  static Future<DownloadTask?> downloadFile(
+    String storagePath, {
+    Directory? cacheDir,
+  }) async {
+    final localFilePath = await LocalFile.getPath(
+      storagePath: storagePath,
+      cacheDir: cacheDir,
+    );
+
+    final storageRef = FirebaseStorage.instance.ref(storagePath);
+    final url = await storageRef.getDownloadURL();
+
+    final dl = DownloadManager(maxConcurrentTasks: 4);
+
+    return await dl.addDownload(url, localFilePath);
+  }
+}
