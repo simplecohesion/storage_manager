@@ -8,7 +8,7 @@ environment:
 
 dependencies:
   dio: ^4.0.6
-  firebase_storage: ^10.3.7
+  firebase_storage: ^11.0.3
   flutter:
     sdk: flutter
   flutter_download_manager: ^0.5.3
