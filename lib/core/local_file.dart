@@ -3,14 +3,32 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 abstract class LocalFile {
-  static Future<bool> fileExists(String localPath,
-      {Directory? cacheDir}) async {
+  static Future<bool> fileExists(
+    String localPath, {
+    Directory? cacheDir,
+  }) async {
     final file = File(localPath);
     return await file.exists();
   }
 
-  static Future<String> getPath(
-      {required String storagePath, Directory? cacheDir}) async {
+  static Future<DateTime?> lastModified(String localPath) async {
+    final fileExists = await LocalFile.fileExists(localPath);
+    if (!fileExists) {
+      return null;
+    }
+    final file = File(localPath);
+    try {
+      // return file.statSync().changed;
+      return file.lastModified();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Future<String> getPath({
+    required String storagePath,
+    Directory? cacheDir,
+  }) async {
     final cacheDirectory = cacheDir ?? await getTemporaryDirectory();
     final downloadDir = await _getDownloadDirectory(cacheDirectory);
     final fileName = _getFileNameFromStoragePath(storagePath);

@@ -31,13 +31,28 @@ class StorageManagerController {
 
   /// Try to get file path from cache,
   /// If it's not exists it will download the file and cache it.
-  Future<void> getFile(String storagePath, {Directory? cacheDir}) async {
+  Future<void> getFile(
+    String storagePath, {
+    Directory? cacheDir,
+    DateTime? updateDate,
+  }) async {
     try {
       String filePath =
           await LocalFile.getPath(storagePath: storagePath, cacheDir: cacheDir);
 
       bool fileExists = await LocalFile.fileExists(filePath);
-      if (fileExists) {
+      bool needsUpdate = false;
+
+      if (fileExists && updateDate != null) {
+        final lastModified = await LocalFile.lastModified(filePath);
+        if (lastModified != null) {
+          needsUpdate = lastModified.isBefore(updateDate);
+        } else {
+          needsUpdate = true;
+        }
+      }
+
+      if (fileExists && !needsUpdate) {
         _snapshot.filePath = filePath;
         _snapshot.status = StorageManagerStatus.success;
         _onSnapshotChanged(_snapshot);
