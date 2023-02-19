@@ -6,17 +6,20 @@ import '../storage_manager.dart';
 /// Using this widget it will download the file if not downloaded yet,
 /// if downloaded it will get it back in snapshot.
 class StorageManagerBuilder extends StatefulWidget {
-  const StorageManagerBuilder(
-      {Key? key,
-      required this.storagePath,
-      required this.builder,
-      this.cacheDirectory})
-      : super(key: key);
+  const StorageManagerBuilder({
+    Key? key,
+    required this.storagePath,
+    required this.builder,
+    this.updateDate,
+    this.cacheDirectory,
+  }) : super(key: key);
 
   /// URL of any type of media (Audio, Video, Image, etc...)
   final String storagePath;
 
   final Directory? cacheDirectory;
+
+  final DateTime? updateDate;
 
   /// Snapshot Will provide you the status of process
   /// (Success, Error, Loading)
@@ -53,7 +56,7 @@ class _StorageManagerBuilderState extends State<StorageManagerBuilder> {
     );
 
     _storageManagerController.getFile(widget.storagePath,
-        cacheDir: widget.cacheDirectory);
+        cacheDir: widget.cacheDirectory, updateDate: widget.updateDate);
 
     super.initState();
   }

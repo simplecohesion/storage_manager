@@ -1,6 +1,7 @@
 name: storage_manager
 description: A new Flutter package project.
-version: 0.5.2
+version: 0.6.0
+publish_to: none
 
 environment:
   sdk: ">=2.17.6 <3.0.0"
@@ -11,7 +12,10 @@ dependencies:
   firebase_storage: ^11.0.3
   flutter:
     sdk: flutter
-  flutter_download_manager: ^0.5.3
+  flutter_download_manager:
+    git: 
+      url: https://github.com/simplecohesion/flutter_download_manager
+      ref: 6d226ff
   path_provider: ^2.0.11
 
 dev_dependencies:
