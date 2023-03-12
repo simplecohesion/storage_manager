@@ -8,14 +8,13 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
-  dio: ^4.0.6
   firebase_storage: ^11.0.3
   flutter:
     sdk: flutter
   flutter_download_manager:
     git: 
       url: https://github.com/simplecohesion/flutter_download_manager
-      ref: 6d226ff
+      ref: 59759860f4c76f01c985112727111f36360c8db5
   path_provider: ^2.0.11
 
 dev_dependencies:
