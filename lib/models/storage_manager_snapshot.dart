@@ -1,19 +1,34 @@
+import 'package:flutter/foundation.dart';
+
 import '../storage_manager.dart';
 
 /// DTO Class make it easy to fetch process snapshot ASAP.
+@immutable
 class StorageManagerSnapshot {
   /// Status of download process (Success, Error, Loading)
-  late StorageManagerStatus status;
+  final StorageManagerStatus status;
 
   /// File that you have downloaded.
-  late String? filePath;
+  final String? filePath;
 
   /// Progress of download process.
-  late double? progress;
+  final double? progress;
 
-  StorageManagerSnapshot({
+  const StorageManagerSnapshot({
     required this.filePath,
     required this.progress,
     required this.status,
   });
+
+  StorageManagerSnapshot copyWith({
+    String? filePath,
+    double? progress,
+    StorageManagerStatus? status,
+  }) {
+    return StorageManagerSnapshot(
+      filePath: filePath ?? this.filePath,
+      progress: progress ?? this.progress,
+      status: status ?? this.status,
+    );
+  }
 }

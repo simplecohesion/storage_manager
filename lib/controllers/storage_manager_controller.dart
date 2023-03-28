@@ -53,8 +53,10 @@ class StorageManagerController {
       }
 
       if (fileExists && !needsUpdate) {
-        _snapshot.filePath = filePath;
-        _snapshot.status = StorageManagerStatus.success;
+        _snapshot = _snapshot.copyWith(
+          filePath: filePath,
+          status: StorageManagerStatus.success,
+        );
         _onSnapshotChanged(_snapshot);
         return;
       }
@@ -67,12 +69,20 @@ class StorageManagerController {
       _downloadTask?.status.addListener(statusUpdated);
     } on FirebaseException catch (e) {
       if (e.code == 'object-not-found') {
-        _onSnapshotChanged(_snapshot..status = StorageManagerStatus.missing);
+        _snapshot = _snapshot.copyWith(
+          status: StorageManagerStatus.missing,
+        );
       } else {
-        _onSnapshotChanged(_snapshot..status = StorageManagerStatus.error);
+        _snapshot = _snapshot.copyWith(
+          status: StorageManagerStatus.error,
+        );
       }
+      _onSnapshotChanged(_snapshot);
     } catch (error) {
-      _onSnapshotChanged(_snapshot..status = StorageManagerStatus.error);
+      _snapshot = _snapshot.copyWith(
+        status: StorageManagerStatus.error,
+      );
+      _onSnapshotChanged(_snapshot);
     }
   }
 
@@ -84,7 +94,8 @@ class StorageManagerController {
 
     final progress = task.progress.value;
 
-    _onSnapshotChanged(_snapshot..progress = (progress));
+    _snapshot = _snapshot.copyWith(progress: progress);
+    _onSnapshotChanged(_snapshot);
   }
 
   void statusUpdated() {
@@ -97,19 +108,25 @@ class StorageManagerController {
     final status = task.status;
 
     if (status.value == DownloadStatus.completed) {
-      _snapshot.filePath = filePath;
-      _snapshot.status = StorageManagerStatus.success;
+      _snapshot = _snapshot.copyWith(
+        filePath: filePath,
+        status: StorageManagerStatus.success,
+      );
       _onSnapshotChanged(_snapshot);
     }
 
     if (status.value == DownloadStatus.downloading) {
-      _snapshot.status = StorageManagerStatus.loading;
+      _snapshot = _snapshot.copyWith(
+        status: StorageManagerStatus.loading,
+      );
       _onSnapshotChanged(_snapshot);
     }
 
     if (status.value == DownloadStatus.failed) {
       task.request.cancelToken.cancel();
-      _snapshot.status = StorageManagerStatus.error;
+      _snapshot = _snapshot.copyWith(
+        status: StorageManagerStatus.error,
+      );
       _onSnapshotChanged(_snapshot);
     }
   }
