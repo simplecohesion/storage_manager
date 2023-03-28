@@ -1,6 +1,6 @@
 name: storage_manager
 description: A new Flutter package project.
-version: 0.7.0
+version: 0.7.1
 publish_to: none
 
 environment:

@@ -2,29 +2,26 @@ import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart' show FirebaseException;
 import 'package:flutter_download_manager/flutter_download_manager.dart';
+import 'package:storage_manager/models/storage_manager_snapshot.dart';
 
 import '../core/download_manager.dart';
 import '../core/local_file.dart';
 import '../enums/storage_manager_status.dart';
-import '../models/storage_manager_snapshot.dart';
 
 class StorageManagerController {
   StorageManagerController({
-    required StorageManagerSnapshot snapshot,
-    required Function(StorageManagerSnapshot) onSnapshotChanged,
-  }) {
-    _onSnapshotChanged = onSnapshotChanged;
-    _snapshot = snapshot;
-  }
+    required this.snapshot,
+    required this.onSnapshotChanged,
+  });
 
   /// When snapshot changes this function will called and give you the new snapshot
-  late final Function(StorageManagerSnapshot) _onSnapshotChanged;
+  final Function(StorageManagerSnapshot) onSnapshotChanged;
 
   /// Provide us a 3 Variable
   /// 1 - Status : It's the status of the process (Success, Loading, Error).
   /// 2 - Progress : The progress if the file is downloading.
   /// 3 - FilePath : When Status is Success the FilePath won't be null;
-  late final StorageManagerSnapshot _snapshot;
+  StorageManagerSnapshot snapshot;
 
   DownloadTask? _downloadTask;
   bool _isDisposed = false;
@@ -53,11 +50,11 @@ class StorageManagerController {
       }
 
       if (fileExists && !needsUpdate) {
-        _snapshot = _snapshot.copyWith(
+        snapshot = snapshot.copyWith(
           filePath: filePath,
           status: StorageManagerStatus.success,
         );
-        _onSnapshotChanged(_snapshot);
+        onSnapshotChanged(snapshot);
         return;
       }
 
@@ -69,20 +66,20 @@ class StorageManagerController {
       _downloadTask?.status.addListener(statusUpdated);
     } on FirebaseException catch (e) {
       if (e.code == 'object-not-found') {
-        _snapshot = _snapshot.copyWith(
+        snapshot = snapshot.copyWith(
           status: StorageManagerStatus.missing,
         );
       } else {
-        _snapshot = _snapshot.copyWith(
+        snapshot = snapshot.copyWith(
           status: StorageManagerStatus.error,
         );
       }
-      _onSnapshotChanged(_snapshot);
+      onSnapshotChanged(snapshot);
     } catch (error) {
-      _snapshot = _snapshot.copyWith(
+      snapshot = snapshot.copyWith(
         status: StorageManagerStatus.error,
       );
-      _onSnapshotChanged(_snapshot);
+      onSnapshotChanged(snapshot);
     }
   }
 
@@ -94,8 +91,8 @@ class StorageManagerController {
 
     final progress = task.progress.value;
 
-    _snapshot = _snapshot.copyWith(progress: progress);
-    _onSnapshotChanged(_snapshot);
+    snapshot = snapshot.copyWith(progress: progress);
+    onSnapshotChanged(snapshot);
   }
 
   void statusUpdated() {
@@ -108,26 +105,26 @@ class StorageManagerController {
     final status = task.status;
 
     if (status.value == DownloadStatus.completed) {
-      _snapshot = _snapshot.copyWith(
+      snapshot = snapshot.copyWith(
         filePath: filePath,
         status: StorageManagerStatus.success,
       );
-      _onSnapshotChanged(_snapshot);
+      onSnapshotChanged(snapshot);
     }
 
     if (status.value == DownloadStatus.downloading) {
-      _snapshot = _snapshot.copyWith(
+      snapshot = snapshot.copyWith(
         status: StorageManagerStatus.loading,
       );
-      _onSnapshotChanged(_snapshot);
+      onSnapshotChanged(snapshot);
     }
 
     if (status.value == DownloadStatus.failed) {
       task.request.cancelToken.cancel();
-      _snapshot = _snapshot.copyWith(
+      snapshot = snapshot.copyWith(
         status: StorageManagerStatus.error,
       );
-      _onSnapshotChanged(_snapshot);
+      onSnapshotChanged(snapshot);
     }
   }
 
