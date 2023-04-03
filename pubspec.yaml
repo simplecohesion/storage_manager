@@ -14,7 +14,6 @@ dependencies:
   flutter_download_manager:
     git: 
       url: https://github.com/simplecohesion/flutter_download_manager
-      ref: 59759860f4c76f01c985112727111f36360c8db5
   path_provider: ^2.0.11
 
 dev_dependencies:
