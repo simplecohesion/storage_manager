@@ -1,7 +1,8 @@
 import 'dart:io';
+
 import 'package:firebase_storage/firebase_storage.dart' show FirebaseStorage;
-import 'local_file.dart';
 import 'package:flutter_download_manager/flutter_download_manager.dart';
+import 'package:storage_manager/core/local_file.dart';
 
 abstract class Downloader {
   static Future<DownloadTask?> downloadFile(
@@ -18,6 +19,6 @@ abstract class Downloader {
 
     final dl = DownloadManager(maxConcurrentTasks: 4);
 
-    return await dl.addDownload(url, localFilePath);
+    return dl.addDownload(url, localFilePath);
   }
 }

@@ -1,18 +1,18 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import '../storage_manager.dart';
+import 'package:storage_manager/storage_manager.dart';
 
 /// Using this widget it will download the file if not downloaded yet,
 /// if downloaded it will get it back in snapshot.
 class StorageManagerBuilder extends StatefulWidget {
   const StorageManagerBuilder({
-    Key? key,
     required this.storagePath,
     required this.builder,
     this.updateDate,
     this.cacheDirectory,
-  }) : super(key: key);
+    super.key,
+  });
 
   /// URL of any type of media (Audio, Video, Image, etc...)
   final String storagePath;
@@ -37,7 +37,7 @@ class _StorageManagerBuilderState extends State<StorageManagerBuilder> {
 
   @override
   void initState() {
-    snapshot = StorageManagerSnapshot(
+    snapshot = const StorageManagerSnapshot(
       status: StorageManagerStatus.loading,
       filePath: null,
       progress: null,
@@ -55,8 +55,11 @@ class _StorageManagerBuilderState extends State<StorageManagerBuilder> {
       },
     );
 
-    _storageManagerController.getFile(widget.storagePath,
-        cacheDir: widget.cacheDirectory, updateDate: widget.updateDate);
+    _storageManagerController.getFile(
+      widget.storagePath,
+      cacheDir: widget.cacheDirectory,
+      updateDate: widget.updateDate,
+    );
 
     super.initState();
   }

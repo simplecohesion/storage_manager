@@ -2,11 +2,10 @@ import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart' show FirebaseException;
 import 'package:flutter_download_manager/flutter_download_manager.dart';
+import 'package:storage_manager/core/download_manager.dart';
+import 'package:storage_manager/core/local_file.dart';
+import 'package:storage_manager/enums/storage_manager_status.dart';
 import 'package:storage_manager/models/storage_manager_snapshot.dart';
-
-import '../core/download_manager.dart';
-import '../core/local_file.dart';
-import '../enums/storage_manager_status.dart';
 
 class StorageManagerController {
   StorageManagerController({
@@ -14,8 +13,9 @@ class StorageManagerController {
     required this.onSnapshotChanged,
   });
 
-  /// When snapshot changes this function will called and give you the new snapshot
-  final Function(StorageManagerSnapshot) onSnapshotChanged;
+  /// When snapshot changes this function will called and give you the new
+  /// snapshot
+  final void Function(StorageManagerSnapshot) onSnapshotChanged;
 
   /// Provide us a 3 Variable
   /// 1 - Status : It's the status of the process (Success, Loading, Error).
@@ -34,14 +34,14 @@ class StorageManagerController {
     DateTime? updateDate,
   }) async {
     try {
-      String filePath =
+      final filePath =
           await LocalFile.getPath(storagePath: storagePath, cacheDir: cacheDir);
 
-      bool fileExists = await LocalFile.fileExists(filePath);
-      bool needsUpdate = false;
+      final fileExists = LocalFile.fileExists(filePath);
+      var needsUpdate = false;
 
       if (fileExists && updateDate != null) {
-        final lastModified = await LocalFile.lastModified(filePath);
+        final lastModified = LocalFile.lastModified(filePath);
         if (lastModified != null) {
           needsUpdate = lastModified.isBefore(updateDate);
         } else {
