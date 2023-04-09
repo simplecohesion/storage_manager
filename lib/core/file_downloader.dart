@@ -4,7 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart' show FirebaseStorage;
 import 'package:flutter_download_manager/flutter_download_manager.dart';
 import 'package:storage_manager/core/local_file.dart';
 
-abstract class Downloader {
+abstract class FileDownloader {
   static Future<DownloadTask?> downloadFile(
     String storagePath, {
     Directory? cacheDir,
