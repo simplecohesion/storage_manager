@@ -31,13 +31,13 @@ abstract class LocalFile {
     Directory? cacheDir,
   }) async {
     final cacheDirectory = cacheDir ?? await getTemporaryDirectory();
-    final downloadDir = _getDownloadDirectory(cacheDirectory);
+    final downloadDir = getDownloadDirectory(cacheDirectory);
     final fileName = _getFileNameFromStoragePath(storagePath);
     final filePath = '${downloadDir.path}/$fileName';
     return filePath;
   }
 
-  static Directory _getDownloadDirectory(Directory cacheDir) {
+  static Directory getDownloadDirectory(Directory cacheDir) {
     final downloadDir = Directory('${cacheDir.path}/files');
     final isDirExist = downloadDir.existsSync();
     if (!isDirExist) {
