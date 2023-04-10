@@ -13,19 +13,19 @@ class StorageController {
 
   Future<void> clearCache({Directory? cacheDir}) async {
     final cacheDirectory = cacheDir ?? await getTemporaryDirectory();
-    final downloadDir = LocalFile.getDownloadDirectory(cacheDirectory);
+    final downloadDir = await LocalFile.getDownloadDirectory(cacheDirectory);
 
-    downloadDir.listSync().forEach((element) {
+    await downloadDir.list().forEach((element) {
       element.deleteSync();
     });
   }
 
   Future<int> getCacheSize() async {
     final cacheDirectory = await getTemporaryDirectory();
-    final downloadDir = LocalFile.getDownloadDirectory(cacheDirectory);
+    final downloadDir = await LocalFile.getDownloadDirectory(cacheDirectory);
 
     var totalSize = 0;
-    if (downloadDir.existsSync()) {
+    if (await downloadDir.exists()) {
       downloadDir
           .listSync(recursive: true, followLinks: false)
           .forEach((FileSystemEntity entity) {

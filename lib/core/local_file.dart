@@ -3,24 +3,24 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
 abstract class LocalFile {
-  static bool fileExists(
+  static Future<bool> fileExists(
     String localPath, {
     Directory? cacheDir,
   }) {
     final file = File(localPath);
     // ignore: unnecessary_await_in_return
-    return file.existsSync();
+    return file.exists();
   }
 
-  static DateTime? lastModified(String localPath) {
-    final fileExists = LocalFile.fileExists(localPath);
+  static Future<DateTime?> lastModified(String localPath) async {
+    final fileExists = await LocalFile.fileExists(localPath);
     if (!fileExists) {
       return null;
     }
     final file = File(localPath);
     try {
       // return file.statSync().changed;
-      return file.lastModifiedSync();
+      return await file.lastModified();
     } catch (e) {
       return null;
     }
@@ -31,15 +31,15 @@ abstract class LocalFile {
     Directory? cacheDir,
   }) async {
     final cacheDirectory = cacheDir ?? await getTemporaryDirectory();
-    final downloadDir = getDownloadDirectory(cacheDirectory);
+    final downloadDir = await getDownloadDirectory(cacheDirectory);
     final fileName = _getFileNameFromStoragePath(storagePath);
     final filePath = '${downloadDir.path}/$fileName';
     return filePath;
   }
 
-  static Directory getDownloadDirectory(Directory cacheDir) {
+  static Future<Directory> getDownloadDirectory(Directory cacheDir) async {
     final downloadDir = Directory('${cacheDir.path}/files');
-    final isDirExist = downloadDir.existsSync();
+    final isDirExist = await downloadDir.exists();
     if (!isDirExist) {
       downloadDir.createSync(recursive: true);
     }
