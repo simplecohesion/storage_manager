@@ -18,5 +18,8 @@ class StorageController {
     });
   }
 
-  // void dispose() {}
+  Future<int> getCacheSize() async {
+    final cacheDirectory = await getTemporaryDirectory();
+    return cacheDirectory.statSync().size;
+  }
 }
