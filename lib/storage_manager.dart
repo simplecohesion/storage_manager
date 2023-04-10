@@ -1,7 +1,8 @@
+/// Storage manager library
 library storage_manager;
 
-export 'controllers/storage_manager_controller.dart';
-export 'enums/storage_manager_status.dart';
-export 'models/storage_manager_snapshot.dart';
-export 'core/download_manager.dart';
+export 'controllers/storage_file_controller.dart';
+export 'core/file_downloader.dart';
+export 'enums/storage_file_status.dart';
+export 'models/storage_file_snapshot.dart';
 export 'widgets/storage_manager_builder.dart';
