@@ -20,6 +20,18 @@ class StorageController {
 
   Future<int> getCacheSize() async {
     final cacheDirectory = await getTemporaryDirectory();
-    return cacheDirectory.statSync().size;
+
+    var totalSize = 0;
+    if (cacheDirectory.existsSync()) {
+      cacheDirectory
+          .listSync(recursive: true, followLinks: false)
+          .forEach((FileSystemEntity entity) {
+        if (entity is File) {
+          totalSize += entity.lengthSync();
+        }
+      });
+    }
+
+    return totalSize;
   }
 }
