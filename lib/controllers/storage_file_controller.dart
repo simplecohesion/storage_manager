@@ -24,6 +24,7 @@ class StorageFileController {
   StorageFileSnapshot snapshot;
 
   DownloadTask? _downloadTask;
+  bool _isDisposed = false;
 
   /// Try to get file path from cache,
   /// If it's not exists it will download the file and cache it.
@@ -33,19 +34,21 @@ class StorageFileController {
     DateTime? updateDate,
   }) async {
     try {
+      if (_isDisposed) return;
+
       // Get the filepath to the local cache
       final filePath =
           await LocalFile.getPath(storagePath: storagePath, cacheDir: cacheDir);
 
       // Check if the file exists
-      final fileExists = LocalFile.fileExists(filePath);
+      final fileExists = await LocalFile.fileExists(filePath);
 
       // Check if the file needs to be updated (redownloaded)
       // By comparing the supplied update date to the last modified date of
       // the local file
       var needsUpdate = false;
       if (fileExists && updateDate != null) {
-        final lastModified = LocalFile.lastModified(filePath);
+        final lastModified = await LocalFile.lastModified(filePath);
         if (lastModified != null) {
           needsUpdate = lastModified.isBefore(updateDate);
         } else {
@@ -67,10 +70,14 @@ class StorageFileController {
       // If the file doesn't exist or needs to be updated, download the file
       // and cache it
 
+      if (_isDisposed) return;
+
       // Get the download task
       _downloadTask = await FileDownloader.downloadFile(
         storagePath,
       );
+
+      if (_isDisposed) return;
 
       // Add listeners to the download task
       _downloadTask?.progress.addListener(progressUpdated);
@@ -95,6 +102,8 @@ class StorageFileController {
   }
 
   void progressUpdated() {
+    if (_isDisposed) return;
+
     final task = _downloadTask;
     if (task == null) return;
 
@@ -105,6 +114,8 @@ class StorageFileController {
   }
 
   void statusUpdated() {
+    if (_isDisposed) return;
+
     final task = _downloadTask;
     if (task == null) return;
 
@@ -135,8 +146,8 @@ class StorageFileController {
   }
 
   void dispose() {
+    _isDisposed = true;
     _downloadTask?.progress.removeListener(progressUpdated);
     _downloadTask?.status.removeListener(statusUpdated);
-    _downloadTask = null;
   }
 }
