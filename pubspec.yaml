@@ -1,6 +1,6 @@
 name: storage_manager
 description: Manages local storage.
-version: 0.8.0
+version: 0.8.1
 publish_to: none
 
 environment:
