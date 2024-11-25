@@ -1,51 +1,56 @@
 import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:storage_manager/core/native_local_file.dart';
+import 'package:storage_manager/core/web_local_file.dart';
 
+/// A platform-agnostic interface for handling local file operations.
+///
+/// This abstract class provides a common API for file operations that work across
+/// both web and native platforms. It uses the factory singleton pattern to return
+/// the appropriate implementation ([WebLocalFile] or [NativeLocalFile]) based on
+/// the platform.
 abstract class LocalFile {
-  static Future<bool> fileExists(
-    String localPath, {
-    Directory? cacheDir,
-  }) {
-    final file = File(localPath);
-    // ignore: unnecessary_await_in_return
-    return file.exists();
-  }
+  // Internal constructor
+  LocalFile._();
 
-  static Future<DateTime?> lastModified(String localPath) async {
-    final fileExists = await LocalFile.fileExists(localPath);
-    if (!fileExists) {
-      return null;
-    }
-    final file = File(localPath);
-    try {
-      // return file.statSync().changed;
-      return await file.lastModified();
-    } catch (e) {
-      return null;
-    }
-  }
+  /// Checks if a file exists at the specified local path.
+  ///
+  /// Returns `true` if the file exists, `false` otherwise.
+  Future<bool> fileExists(String localPath);
 
-  static Future<String> getPath({
+  /// Gets the last modification timestamp of a file.
+  ///
+  /// Returns `null` if the file doesn't exist or the timestamp cannot be retrieved.
+  Future<DateTime?> lastModified(String localPath);
+
+  /// Resolves the full path for a file based on the storage path.
+  ///
+  /// [storagePath] is the relative path within the storage system.
+  /// [cacheDir] is an optional directory for caching files (typically used in native platforms).
+  Future<String> getPath({
     required String storagePath,
     Directory? cacheDir,
-  }) async {
-    final cacheDirectory = cacheDir ?? await getTemporaryDirectory();
-    final downloadDir = await getDownloadDirectory(cacheDirectory);
-    final fileName = _getFileNameFromStoragePath(storagePath);
-    final filePath = '${downloadDir.path}/$fileName';
-    return filePath;
-  }
+  });
 
-  static Future<Directory> getDownloadDirectory(Directory cacheDir) async {
-    final downloadDir = Directory('${cacheDir.path}/files');
-    final isDirExist = await downloadDir.exists();
-    if (!isDirExist) {
-      downloadDir.createSync(recursive: true);
+  /// Gets the directory used for downloading files.
+  ///
+  /// [cacheDir] is the base cache directory to use for downloads.
+  Future<Directory> getDownloadDirectory(Directory cacheDir);
+
+  static LocalFile? _instance;
+
+  /// Returns the singleton instance of [LocalFile].
+  ///
+  /// Creates and returns a [WebLocalFile] for web platforms or
+  /// [NativeLocalFile] for native platforms on first access.
+  static LocalFile get instance {
+    if (_instance != null) {
+      return _instance!;
     }
-    return downloadDir;
-  }
 
-  static String _getFileNameFromStoragePath(String storagePath) =>
-      storagePath.substring(storagePath.lastIndexOf('/') + 1);
+    _instance = kIsWeb ? WebLocalFile() : NativeLocalFile();
+
+    return _instance!;
+  }
 }
