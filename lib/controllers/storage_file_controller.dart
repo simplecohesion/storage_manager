@@ -37,18 +37,21 @@ class StorageFileController {
       if (_isDisposed) return;
 
       // Get the filepath to the local cache
-      final filePath =
-          await LocalFile.getPath(storagePath: storagePath, cacheDir: cacheDir);
+      // TODO: see if this makes any sense for web
+      final filePath = await LocalFile.instance.getPath(
+        storagePath: storagePath,
+        cacheDir: cacheDir,
+      );
 
       // Check if the file exists
-      final fileExists = await LocalFile.fileExists(filePath);
+      final fileExists = await LocalFile.instance.fileExists(filePath);
 
       // Check if the file needs to be updated (redownloaded)
       // By comparing the supplied update date to the last modified date of
       // the local file
       var needsUpdate = false;
       if (fileExists && updateDate != null) {
-        final lastModified = await LocalFile.lastModified(filePath);
+        final lastModified = await LocalFile.instance.lastModified(filePath);
         if (lastModified != null) {
           needsUpdate = lastModified.isBefore(updateDate);
         } else {
