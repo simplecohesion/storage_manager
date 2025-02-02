@@ -6,11 +6,9 @@ linter:
     avoid_final_parameters: false
     avoid_slow_async_io: false
     lines_longer_than_80_chars: false
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    avoid_catches_without_on_clauses: false
+    flutter_style_todos: false
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
 analyzer:
   exclude: [build/**, lib/**.freezed.dart, lib/**.g.dart]
   # plugins:
