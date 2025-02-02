@@ -150,6 +150,7 @@ class StorageFileController {
 
   void dispose() {
     _isDisposed = true;
+    snapshot = const StorageFileSnapshot(); // Clear snapshot data
     _downloadTask?.progress.removeListener(progressUpdated);
     _downloadTask?.status.removeListener(statusUpdated);
   }
