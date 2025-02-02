@@ -6,9 +6,9 @@ import 'package:storage_manager/storage_manager.dart';
 @immutable
 class StorageFileSnapshot {
   const StorageFileSnapshot({
-    required this.filePath,
-    required this.progress,
-    required this.status,
+    this.filePath,
+    this.progress,
+    this.status = StorageFileStatus.loading,
   });
 
   /// Status of download process (Success, Error, Loading)
@@ -31,4 +31,16 @@ class StorageFileSnapshot {
       status: status ?? this.status,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is StorageFileSnapshot &&
+        other.status == status &&
+        other.filePath == filePath &&
+        other.progress == progress;
+  }
+
+  @override
+  int get hashCode => Object.hash(status, filePath, progress);
 }
