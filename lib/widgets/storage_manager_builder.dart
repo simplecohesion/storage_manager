@@ -21,6 +21,8 @@ class StorageFileBuilder extends StatefulWidget {
 
   final Directory? cacheDirectory;
 
+  /// The date when the file was last updated. If provided, the local cached file
+  /// will be re-downloaded if it was cached before this date.
   final DateTime? updateDate;
 
   /// Snapshot Will provide you the status of process
@@ -34,18 +36,15 @@ class StorageFileBuilder extends StatefulWidget {
 }
 
 class _StorageFileBuilderState extends State<StorageFileBuilder> {
-  late StorageFileController _storageFileController;
+  late final StorageFileController _storageFileController;
   late StorageFileSnapshot snapshot;
 
   @override
   void initState() {
-    snapshot = const StorageFileSnapshot(
-      status: StorageFileStatus.loading,
-      filePath: null,
-      progress: null,
-    );
+    super.initState();
 
-    /// Initializing Widget Logic Controller
+    snapshot = const StorageFileSnapshot();
+
     _storageFileController = StorageFileController(
       snapshot: snapshot,
       onSnapshotChanged: (snapshot) {
@@ -62,8 +61,6 @@ class _StorageFileBuilderState extends State<StorageFileBuilder> {
       cacheDir: widget.cacheDirectory,
       updateDate: widget.updateDate,
     );
-
-    super.initState();
   }
 
   @override
