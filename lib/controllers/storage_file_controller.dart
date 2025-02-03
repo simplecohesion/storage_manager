@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart' show FirebaseException;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_download_manager/flutter_download_manager.dart';
 import 'package:storage_manager/core/file_downloader.dart';
 import 'package:storage_manager/core/local_file.dart';
+import 'package:storage_manager/core/opfs_helper.dart';
 import 'package:storage_manager/enums/storage_file_status.dart';
 import 'package:storage_manager/models/storage_file_snapshot.dart';
 
@@ -37,7 +39,6 @@ class StorageFileController {
       if (_isDisposed) return;
 
       // Get the filepath to the local cache
-      // TODO: see if this makes any sense for web
       final filePath = await LocalFile.instance.getPath(
         storagePath: storagePath,
         cacheDir: cacheDir,
@@ -63,7 +64,8 @@ class StorageFileController {
       // to the local cached file
       if (fileExists && !needsUpdate) {
         snapshot = snapshot.copyWith(
-          filePath: filePath,
+          filePath:
+              kIsWeb ? await OpfsHelper.readFileFromOPFS(filePath) : filePath,
           status: StorageFileStatus.success,
         );
         onSnapshotChanged(snapshot);

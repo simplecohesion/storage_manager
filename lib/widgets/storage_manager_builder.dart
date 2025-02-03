@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:storage_manager/controllers/storage_file_controller.dart';
-import 'package:storage_manager/enums/storage_file_status.dart';
 import 'package:storage_manager/models/storage_file_snapshot.dart';
 
 /// Using this widget it will download the file if not downloaded yet,

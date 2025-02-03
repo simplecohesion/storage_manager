@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:firebase_storage/firebase_storage.dart' show FirebaseStorage;
 import 'package:flutter_download_manager/flutter_download_manager.dart';
 import 'package:storage_manager/core/local_file.dart';
+import 'package:universal_io/io.dart';
 
 // web and native, like the local file
 class FileDownloader {
