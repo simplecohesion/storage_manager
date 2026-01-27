@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:storage_manager/core/local_file.dart';
 
-// TODO: May need to make this an abstract class, and have implementations for
-// web and native, like the local file
+// TODO(roscoemccord): Consider an abstract web/native implementation.
 class StorageController {
   factory StorageController() {
     return _instance;
@@ -24,7 +23,7 @@ class StorageController {
   }
 
   Future<int> getCacheSize() async {
-    // TODO: Implement for web, this may need a kisweb check conditional
+    // TODO(roscoemccord): Implement for web; may need a kIsWeb conditional.
     final cacheDirectory = await getTemporaryDirectory();
     final downloadDir =
         await LocalFile.instance.getDownloadDirectory(cacheDirectory);

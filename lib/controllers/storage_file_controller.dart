@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart' show FirebaseException;
+import 'package:flutter/foundation.dart';
 import 'package:flutter_download_manager/flutter_download_manager.dart';
 import 'package:storage_manager/core/file_downloader.dart';
 import 'package:storage_manager/core/local_file.dart';
@@ -26,9 +27,49 @@ class StorageFileController {
   DownloadTask? _downloadTask;
   bool _isDisposed = false;
 
+  /// Detaches listeners from any in-progress download task.
+  ///
+  /// This should be called before starting a new download to prevent
+  /// stale updates from previous downloads and avoid listener leaks.
+  ///
+  /// Note: do not cancel here — downloads may be shared across multiple
+  /// controllers via the shared [DownloadManager] (keyed by URL).
+  void _cleanupCurrentTask() {
+    final task = _downloadTask;
+    if (task != null) {
+      task.progress.removeListener(progressUpdated);
+      task.status.removeListener(statusUpdated);
+      _downloadTask = null;
+    }
+  }
+
+  @visibleForTesting
+  DownloadTask? get downloadTaskForTesting => _downloadTask;
+
+  @visibleForTesting
+  set downloadTaskForTesting(DownloadTask? task) => _downloadTask = task;
+
   /// Try to get file path from cache,
   /// If it's not exists it will download the file and cache it.
   Future<void> getFile(
+    String storagePath, {
+    Directory? cacheDir,
+    DateTime? updateDate,
+  }) {
+    return _getFileInternal(
+      storagePath,
+      cacheDir: cacheDir,
+      updateDate: updateDate,
+    ).catchError((Object _, StackTrace __) {
+      if (_isDisposed) return;
+      snapshot = snapshot.copyWith(
+        status: StorageFileStatus.error,
+      );
+      onSnapshotChanged(snapshot);
+    });
+  }
+
+  Future<void> _getFileInternal(
     String storagePath, {
     Directory? cacheDir,
     DateTime? updateDate,
@@ -36,8 +77,11 @@ class StorageFileController {
     try {
       if (_isDisposed) return;
 
+      // Clean up any previous download task before starting a new one
+      _cleanupCurrentTask();
+
       // Get the filepath to the local cache
-      // TODO: see if this makes any sense for web
+      // TODO(roscoemccord): Confirm behavior for web.
       final filePath = await LocalFile.instance.getPath(
         storagePath: storagePath,
         cacheDir: cacheDir,
@@ -78,13 +122,19 @@ class StorageFileController {
       // Get the download task
       _downloadTask = await FileDownloader.downloadFile(
         storagePath,
+        cacheDir: cacheDir,
       );
 
       if (_isDisposed) return;
 
       // Add listeners to the download task
-      _downloadTask?.progress.addListener(progressUpdated);
-      _downloadTask?.status.addListener(statusUpdated);
+      final task = _downloadTask;
+      task?.progress.addListener(progressUpdated);
+      task?.status.addListener(statusUpdated);
+
+      // Sync snapshot with the current task state in case the status already
+      // changed before listeners were attached.
+      statusUpdated();
     } on FirebaseException catch (e) {
       if (e.code == 'object-not-found') {
         snapshot = snapshot.copyWith(
@@ -96,7 +146,7 @@ class StorageFileController {
         );
       }
       onSnapshotChanged(snapshot);
-    } catch (error) {
+    } on Exception catch (_) {
       snapshot = snapshot.copyWith(
         status: StorageFileStatus.error,
       );
@@ -140,7 +190,13 @@ class StorageFileController {
     }
 
     if (status.value == DownloadStatus.failed) {
-      task.request.cancelToken.cancel();
+      snapshot = snapshot.copyWith(
+        status: StorageFileStatus.error,
+      );
+      onSnapshotChanged(snapshot);
+    }
+
+    if (status.value == DownloadStatus.canceled) {
       snapshot = snapshot.copyWith(
         status: StorageFileStatus.error,
       );
@@ -148,9 +204,11 @@ class StorageFileController {
     }
   }
 
+  /// Disposes of this controller and cleans up any active download.
+  ///
+  /// After calling dispose, no further snapshot updates will be emitted.
   void dispose() {
     _isDisposed = true;
-    _downloadTask?.progress.removeListener(progressUpdated);
-    _downloadTask?.status.removeListener(statusUpdated);
+    _cleanupCurrentTask();
   }
 }

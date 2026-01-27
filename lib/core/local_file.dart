@@ -53,4 +53,12 @@ abstract class LocalFile {
 
     return _instance!;
   }
+
+  /// Replaces the singleton instance for testing purposes.
+  ///
+  /// Pass `null` to reset to the default platform-based instance.
+  @visibleForTesting
+  static set instance(LocalFile? value) {
+    _instance = value;
+  }
 }
