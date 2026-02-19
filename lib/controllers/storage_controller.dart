@@ -32,7 +32,7 @@ class StorageController {
     if (await downloadDir.exists()) {
       downloadDir
           .listSync(recursive: true, followLinks: false)
-          .forEach((FileSystemEntity entity) {
+          .forEach((entity) {
         if (entity is File) {
           totalSize += entity.lengthSync();
         }
