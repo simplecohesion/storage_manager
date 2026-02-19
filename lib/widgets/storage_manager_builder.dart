@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -57,13 +58,45 @@ class _StorageFileBuilderState extends State<StorageFileBuilder> {
       },
     );
 
-    _storageFileController.getFile(
-      widget.storagePath,
-      cacheDir: widget.cacheDirectory,
-      updateDate: widget.updateDate,
+    unawaited(
+      _storageFileController.getFile(
+        widget.storagePath,
+        cacheDir: widget.cacheDirectory,
+        updateDate: widget.updateDate,
+      ),
     );
 
     super.initState();
+  }
+
+  @override
+  void didUpdateWidget(StorageFileBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Re-fetch if any relevant properties changed
+    if (widget.storagePath != oldWidget.storagePath ||
+        widget.cacheDirectory?.path != oldWidget.cacheDirectory?.path ||
+        widget.updateDate != oldWidget.updateDate) {
+      const resetSnapshot = StorageFileSnapshot(
+        status: StorageFileStatus.loading,
+        filePath: null,
+        progress: null,
+      );
+
+      // Reset to loading state
+      setState(() {
+        snapshot = resetSnapshot;
+      });
+      _storageFileController.snapshot = resetSnapshot;
+
+      unawaited(
+        _storageFileController.getFile(
+          widget.storagePath,
+          cacheDir: widget.cacheDirectory,
+          updateDate: widget.updateDate,
+        ),
+      );
+    }
   }
 
   @override

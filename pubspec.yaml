@@ -1,6 +1,6 @@
 name: storage_manager
 description: Manages local storage.
-version: 0.8.3
+version: 0.8.35
 publish_to: none
 
 environment:
@@ -18,4 +18,5 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  mocktail: ^1.0.4
   very_good_analysis: ^10.0.0
