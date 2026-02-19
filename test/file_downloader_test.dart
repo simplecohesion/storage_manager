@@ -34,5 +34,25 @@ void main() {
 
       await DownloadManager().removeDownload(url);
     });
+
+    test('cancels queued tasks', () async {
+      final tempDir =
+          Directory.systemTemp.createTempSync('storage_manager_test_');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+
+      final url =
+          'https://example.com/${DateTime.now().microsecondsSinceEpoch}';
+      final task = await DownloadManager().addDownload(url, tempDir.path);
+
+      expect(task, isNotNull);
+      expect(task!.status.value, DownloadStatus.queued);
+
+      FileDownloader.cancelDownload(url);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(task.status.value, DownloadStatus.canceled);
+
+      await DownloadManager().removeDownload(url);
+    });
   });
 }

@@ -5,6 +5,12 @@ import 'package:storage_manager/core/native_local_file.dart';
 
 void main() {
   late NativeLocalFile nativeLocalFile;
+  final separator = Platform.pathSeparator;
+  final filesSegment = '${separator}files$separator';
+
+  String filePathInTemp(Directory tempDir, String fileName) {
+    return '${tempDir.path}$separator$fileName';
+  }
 
   setUp(() {
     nativeLocalFile = NativeLocalFile();
@@ -33,8 +39,8 @@ void main() {
         expect(path1, endsWith('image.png'));
         expect(path2, endsWith('image.png'));
         // Both should be in the files subdirectory
-        expect(path1, contains('/files/'));
-        expect(path2, contains('/files/'));
+        expect(path1, contains(filesSegment));
+        expect(path2, contains(filesSegment));
       });
 
       test('generates same path for same storage path', () async {
@@ -64,7 +70,7 @@ void main() {
         );
 
         expect(path, endsWith('image.png'));
-        expect(path, contains('/files/'));
+        expect(path, contains(filesSegment));
       });
 
       test('handles deeply nested paths', () async {
@@ -77,7 +83,7 @@ void main() {
         );
 
         expect(path, endsWith('image.png'));
-        expect(path, contains('/files/'));
+        expect(path, contains(filesSegment));
       });
 
       test('uses a stable 64-bit hash prefix', () async {
@@ -89,7 +95,8 @@ void main() {
           cacheDir: tempDir,
         );
 
-        final fileName = path.split('/').last;
+        final fileName =
+            path.substring(path.lastIndexOf(separator) + separator.length);
         expect(
           RegExp(r'^[0-9a-f]{16}_image\.png$').hasMatch(fileName),
           isTrue,
@@ -104,7 +111,7 @@ void main() {
 
         final downloadDir = await nativeLocalFile.getDownloadDirectory(tempDir);
 
-        expect(downloadDir.path, contains('/files'));
+        expect(downloadDir.path, contains('${separator}files'));
         expect(await downloadDir.exists(), isTrue);
       });
 
@@ -113,7 +120,7 @@ void main() {
         addTearDown(() => tempDir.delete(recursive: true));
 
         // Create the directory first
-        final filesDir = Directory('${tempDir.path}/files');
+        final filesDir = Directory('${tempDir.path}${separator}files');
         await filesDir.create();
 
         final downloadDir = await nativeLocalFile.getDownloadDirectory(tempDir);
@@ -128,7 +135,7 @@ void main() {
         final tempDir = await Directory.systemTemp.createTemp('test_cache_');
         addTearDown(() => tempDir.delete(recursive: true));
 
-        final file = File('${tempDir.path}/test.txt');
+        final file = File(filePathInTemp(tempDir, 'test.txt'));
         await file.writeAsString('test content');
 
         final exists = await nativeLocalFile.fileExists(file.path);
@@ -140,8 +147,8 @@ void main() {
         final tempDir = await Directory.systemTemp.createTemp('test_cache_');
         addTearDown(() => tempDir.delete(recursive: true));
 
-        final exists =
-            await nativeLocalFile.fileExists('${tempDir.path}/nonexistent.txt');
+        final exists = await nativeLocalFile
+            .fileExists(filePathInTemp(tempDir, 'nonexistent.txt'));
 
         expect(exists, isFalse);
       });
@@ -152,7 +159,7 @@ void main() {
         final tempDir = await Directory.systemTemp.createTemp('test_cache_');
         addTearDown(() => tempDir.delete(recursive: true));
 
-        final file = File('${tempDir.path}/test.txt');
+        final file = File(filePathInTemp(tempDir, 'test.txt'));
         await file.writeAsString('test content');
 
         final lastModified = await nativeLocalFile.lastModified(file.path);
@@ -169,7 +176,7 @@ void main() {
         addTearDown(() => tempDir.delete(recursive: true));
 
         final lastModified = await nativeLocalFile
-            .lastModified('${tempDir.path}/nonexistent.txt');
+            .lastModified(filePathInTemp(tempDir, 'nonexistent.txt'));
 
         expect(lastModified, isNull);
       });
@@ -180,8 +187,8 @@ void main() {
         addTearDown(() => tempDir.delete(recursive: true));
 
         // File doesn't exist, simulating it being deleted
-        final lastModified =
-            await nativeLocalFile.lastModified('${tempDir.path}/deleted.txt');
+        final lastModified = await nativeLocalFile
+            .lastModified(filePathInTemp(tempDir, 'deleted.txt'));
 
         expect(lastModified, isNull);
       });

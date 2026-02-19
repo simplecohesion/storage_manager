@@ -8,11 +8,17 @@ import 'package:storage_manager/core/local_file.dart';
 import 'package:storage_manager/enums/storage_file_status.dart';
 import 'package:storage_manager/models/storage_file_snapshot.dart';
 
+typedef DownloadFileFn = Future<DownloadTask?> Function(
+  String storagePath, {
+  Directory? cacheDir,
+});
+
 class StorageFileController {
   StorageFileController({
     required this.snapshot,
     required this.onSnapshotChanged,
-  });
+    DownloadFileFn? downloadFile,
+  }) : _downloadFile = downloadFile ?? FileDownloader.downloadFile;
 
   /// When snapshot changes this function will called and give you the new
   /// snapshot
@@ -24,8 +30,15 @@ class StorageFileController {
   /// 3 - FilePath : When Status is Success the FilePath won't be null;
   StorageFileSnapshot snapshot;
 
+  final DownloadFileFn _downloadFile;
   DownloadTask? _downloadTask;
   bool _isDisposed = false;
+  int _requestCounter = 0;
+  int _activeRequestId = 0;
+
+  bool _shouldIgnoreRequest(int requestId) {
+    return _isDisposed || requestId != _activeRequestId;
+  }
 
   /// Detaches listeners from any in-progress download task.
   ///
@@ -56,12 +69,16 @@ class StorageFileController {
     Directory? cacheDir,
     DateTime? updateDate,
   }) {
+    final requestId = ++_requestCounter;
+    _activeRequestId = requestId;
+
     return _getFileInternal(
       storagePath,
       cacheDir: cacheDir,
       updateDate: updateDate,
+      requestId: requestId,
     ).catchError((Object _, StackTrace __) {
-      if (_isDisposed) return;
+      if (_shouldIgnoreRequest(requestId)) return;
       snapshot = snapshot.copyWith(
         status: StorageFileStatus.error,
       );
@@ -71,14 +88,16 @@ class StorageFileController {
 
   Future<void> _getFileInternal(
     String storagePath, {
+    required int requestId,
     Directory? cacheDir,
     DateTime? updateDate,
   }) async {
     try {
-      if (_isDisposed) return;
+      if (_shouldIgnoreRequest(requestId)) return;
 
       // Clean up any previous download task before starting a new one
       _cleanupCurrentTask();
+      if (_shouldIgnoreRequest(requestId)) return;
 
       // Get the filepath to the local cache
       // TODO(roscoemccord): Confirm behavior for web.
@@ -86,9 +105,11 @@ class StorageFileController {
         storagePath: storagePath,
         cacheDir: cacheDir,
       );
+      if (_shouldIgnoreRequest(requestId)) return;
 
       // Check if the file exists
       final fileExists = await LocalFile.instance.fileExists(filePath);
+      if (_shouldIgnoreRequest(requestId)) return;
 
       // Check if the file needs to be updated (redownloaded)
       // By comparing the supplied update date to the last modified date of
@@ -96,6 +117,7 @@ class StorageFileController {
       var needsUpdate = false;
       if (fileExists && updateDate != null) {
         final lastModified = await LocalFile.instance.lastModified(filePath);
+        if (_shouldIgnoreRequest(requestId)) return;
         if (lastModified != null) {
           needsUpdate = lastModified.isBefore(updateDate);
         } else {
@@ -106,6 +128,7 @@ class StorageFileController {
       // If the file exists and doesn't need to be updated, return the path
       // to the local cached file
       if (fileExists && !needsUpdate) {
+        if (_shouldIgnoreRequest(requestId)) return;
         snapshot = snapshot.copyWith(
           filePath: filePath,
           status: StorageFileStatus.success,
@@ -117,18 +140,19 @@ class StorageFileController {
       // If the file doesn't exist or needs to be updated, download the file
       // and cache it
 
-      if (_isDisposed) return;
+      if (_shouldIgnoreRequest(requestId)) return;
 
       // Get the download task
-      _downloadTask = await FileDownloader.downloadFile(
+      final task = await _downloadFile(
         storagePath,
         cacheDir: cacheDir,
       );
+      if (_shouldIgnoreRequest(requestId)) return;
+      _downloadTask = task;
 
-      if (_isDisposed) return;
+      if (_shouldIgnoreRequest(requestId)) return;
 
       // Add listeners to the download task
-      final task = _downloadTask;
       task?.progress.addListener(progressUpdated);
       task?.status.addListener(statusUpdated);
 
@@ -136,6 +160,7 @@ class StorageFileController {
       // changed before listeners were attached.
       statusUpdated();
     } on FirebaseException catch (e) {
+      if (_shouldIgnoreRequest(requestId)) return;
       if (e.code == 'object-not-found') {
         snapshot = snapshot.copyWith(
           status: StorageFileStatus.missing,
@@ -147,6 +172,7 @@ class StorageFileController {
       }
       onSnapshotChanged(snapshot);
     } on Exception catch (_) {
+      if (_shouldIgnoreRequest(requestId)) return;
       snapshot = snapshot.copyWith(
         status: StorageFileStatus.error,
       );
@@ -209,6 +235,7 @@ class StorageFileController {
   /// After calling dispose, no further snapshot updates will be emitted.
   void dispose() {
     _isDisposed = true;
+    _activeRequestId = ++_requestCounter;
     _cleanupCurrentTask();
   }
 }

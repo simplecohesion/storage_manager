@@ -259,23 +259,119 @@ void main() {
         expect(capturedSnapshots, hasLength(2));
       });
 
-      test('handles lastModified returning null', () async {
-        // This tests the race condition fix - if lastModified returns null
-        // (e.g., file was deleted), it should trigger a re-download
+      test(
+        'keeps latest task when overlapping getFile calls finish out of order',
+        () async {
+          const initialSnapshot = StorageFileSnapshot(
+            status: StorageFileStatus.loading,
+            filePath: null,
+            progress: null,
+          );
+
+          final firstPathCompleter = Completer<String>();
+          final firstTask = DownloadTask(
+            DownloadRequest(
+              'https://example.com/file1.png',
+              '/tmp/file1.png',
+            ),
+          );
+          final secondTask = DownloadTask(
+            DownloadRequest(
+              'https://example.com/file2.png',
+              '/tmp/file2.png',
+            ),
+          );
+
+          controller = StorageFileController(
+            snapshot: initialSnapshot,
+            onSnapshotChanged: capturedSnapshots.add,
+            downloadFile: (storagePath, {cacheDir}) async {
+              if (storagePath == 'folder/file1.png') {
+                return firstTask;
+              }
+              if (storagePath == 'folder/file2.png') {
+                return secondTask;
+              }
+              return null;
+            },
+          );
+
+          when(
+            () => mockLocalFile.getPath(
+              storagePath: 'folder/file1.png',
+              cacheDir: any(named: 'cacheDir'),
+            ),
+          ).thenAnswer((_) => firstPathCompleter.future);
+
+          when(
+            () => mockLocalFile.getPath(
+              storagePath: 'folder/file2.png',
+              cacheDir: any(named: 'cacheDir'),
+            ),
+          ).thenAnswer((_) async => '/cache/files/file2.png');
+
+          when(
+            () => mockLocalFile.fileExists('/cache/files/file1.png'),
+          ).thenAnswer((_) async => false);
+
+          when(
+            () => mockLocalFile.fileExists('/cache/files/file2.png'),
+          ).thenAnswer((_) async => false);
+
+          final firstCall = controller.getFile('folder/file1.png');
+          final secondCall = controller.getFile('folder/file2.png');
+
+          await Future<void>.delayed(Duration.zero);
+          firstPathCompleter.complete('/cache/files/file1.png');
+          await Future.wait([firstCall, secondCall]);
+
+          expect(controller.downloadTaskForTesting, same(secondTask));
+
+          secondTask.status.value = DownloadStatus.completed;
+          expect(capturedSnapshots.last.status, StorageFileStatus.success);
+          expect(capturedSnapshots.last.filePath, '/tmp/file2.png');
+
+          final beforeStaleCompletion = capturedSnapshots.length;
+          firstTask.status.value = DownloadStatus.completed;
+          expect(capturedSnapshots, hasLength(beforeStaleCompletion));
+
+          expect(
+            capturedSnapshots
+                .any((snapshot) => snapshot.filePath == '/tmp/file1.png'),
+            isFalse,
+          );
+        },
+      );
+
+      test('redownloads when lastModified returns null', () async {
+        // If lastModified is null (e.g., file deleted), it must re-download
+        // instead of using the stale local cache.
         const initialSnapshot = StorageFileSnapshot(
           status: StorageFileStatus.loading,
           filePath: null,
           progress: null,
         );
 
+        var downloadInvoked = false;
+        final downloadTask = DownloadTask(
+          DownloadRequest(
+            'https://example.com/file.png',
+            '/cache/files/redownloaded.png',
+          ),
+        );
+
         controller = StorageFileController(
           snapshot: initialSnapshot,
           onSnapshotChanged: capturedSnapshots.add,
+          downloadFile: (storagePath, {cacheDir}) async {
+            downloadInvoked = true;
+            return downloadTask;
+          },
         );
 
         when(
           () => mockLocalFile.getPath(
-            storagePath: any(named: 'storagePath'),
+            storagePath: 'folder/test.png',
             cacheDir: any(named: 'cacheDir'),
           ),
         ).thenAnswer((_) async => '/cache/files/test.png');
@@ -288,21 +384,35 @@ void main() {
         when(() => mockLocalFile.lastModified('/cache/files/test.png'))
             .thenAnswer((_) async => null);
 
-        // Will try to download but will fail because Firebase isn't set up
-        // The important thing is that needsUpdate becomes true
-        try {
-          await controller.getFile(
-            'folder/test.png',
-            updateDate: DateTime(2024),
-          );
-        } on Exception catch (_) {
-          // Expected - Firebase not initialized
-        }
+        await controller.getFile(
+          'folder/test.png',
+          updateDate: DateTime(2024),
+        );
+
+        expect(downloadInvoked, isTrue);
+        expect(controller.downloadTaskForTesting, same(downloadTask));
+        expect(
+          capturedSnapshots
+              .where(
+                (snapshot) =>
+                    snapshot.status == StorageFileStatus.success &&
+                    snapshot.filePath == '/cache/files/test.png',
+              )
+              .isEmpty,
+          isTrue,
+        );
 
         // Verify lastModified was called
         verify(
           () => mockLocalFile.lastModified('/cache/files/test.png'),
         ).called(1);
+
+        downloadTask.status.value = DownloadStatus.completed;
+        expect(capturedSnapshots.last.status, StorageFileStatus.success);
+        expect(
+          capturedSnapshots.last.filePath,
+          '/cache/files/redownloaded.png',
+        );
       });
     });
 
